@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Compare Reduction Techniques{% endblock %}
+{% block content %}
+    <div class="container-fluid mt-5">
+        <div class="row justify-content-center mt-5 py-5">
+            <div class="col-6 p-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div id="pca-2d"></div>
+                        <div id="loading-spinner-pca-2d"
+                             class="spinner-border text-primary"
+                             role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 p-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div id="tsne"></div>
+                        <div id="loading-spinner-tsne"
+                             class="spinner-border text-primary"
+                             role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 p-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div id="umap"></div>
+                        <div id="loading-spinner-umap"
+                             class="spinner-border text-primary"
+                             role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 p-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div id="lle"></div>
+                        <div id="loading-spinner-lle"
+                             class="spinner-border text-primary"
+                             role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    $(document).ready(function() {
+
+        function renderPlot(plotId, loadingSpinnerId, endpoint) {
+            $(loadingSpinnerId).show();
+
+            return new Promise(function(resolve, reject) {
+
+                $.ajax({
+                    url: endpoint,
+                    type: 'GET',
+                    success: function(response) {
+                        var graphJSON = JSON.parse(response);
+                        var config = {
+                            displayModeBar: false,
+                            scrollZoom: false,
+                            displaylogo: false
+                        };
+
+                        Plotly.setPlotConfig(config);
+                        Plotly.newPlot(plotId, graphJSON, {});
+                        $(loadingSpinnerId).hide();
+
+                        resolve();
+                    },
+                    error: function(error) {
+                        console.log(error);
+                        $(loadingSpinnerId).hide();
+                        reject();
+                    }
+                });
+            });
+        }
+
+        console.log("Rendering plots concurrently");
+
+        Promise.all([
+            renderPlot('pca-2d', '#loading-spinner-pca-2d', '/get_pca_2d'),
+            renderPlot('tsne', '#loading-spinner-tsne', '/get_tsne'),
+            renderPlot('lle', '#loading-spinner-lle', '/get_lle'),
+            renderPlot('umap', '#loading-spinner-umap', '/get_umap')
+        ]).then(function() {
+            console.log("All plots rendered successfully");
+        }).catch(function() {
+            console.log("Error rendering plots");
+        });
+    });
+    </script>
+{% endblock %}

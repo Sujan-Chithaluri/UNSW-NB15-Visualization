@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container mt-5 py-5 px-5">
+        <div class="row justify-content-center mt-5">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div id="svd"></div>
+                    <div id="loading-spinner-svd"
+                         class="spinner-border text-primary"
+                         role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-5">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div id="pca-2d"></div>
+                    <div id="loading-spinner-pca-2d"
+                         class="spinner-border text-primary"
+                         role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-5">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div id="pca-3d"></div>
+                    <div id="loading-spinner-pca-3d"
+                         class="spinner-border text-primary"
+                         role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-5">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div id="tsne"></div>
+                    <div id="loading-spinner-tsne"
+                         class="spinner-border text-primary"
+                         role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-5">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div id="umap"></div>
+                    <div id="loading-spinner-umap"
+                         class="spinner-border text-primary"
+                         role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-5">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div id="lle"></div>
+                    <div id="loading-spinner-lle"
+                         class="spinner-border text-primary"
+                         role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+    
+            function renderPlot(plotId, loadingSpinnerId, endpoint) {
+                $(loadingSpinnerId).show();
+    
+                return new Promise(function(resolve, reject) {
+    
+                    $.ajax({
+                        url: endpoint,
+                        type: 'GET',
+                        success: function(response) {
+                            var graphJSON = JSON.parse(response);
+                            var config = {
+                                displayModeBar: true,
+                                scrollZoom: false,
+                                displaylogo: false
+                            };
+    
+                            Plotly.setPlotConfig(config);
+                            Plotly.plot(plotId, graphJSON, {});
+                            $(loadingSpinnerId).hide();
+    
+                            resolve();
+                        },
+                        error: function(error) {
+                            console.log(error);
+                            $(loadingSpinnerId).hide();
+                            reject();
+                        }
+                    });
+                });
+            }
+    
+            console.log("Rendering plots concurrently");
+    
+            Promise.all([
+                renderPlot('pca-2d', '#loading-spinner-pca-2d', '/get_pca_2d'),
+                renderPlot('pca-3d', '#loading-spinner-pca-3d', '/get_pca_3d'),
+                renderPlot('tsne', '#loading-spinner-tsne', '/get_tsne'),
+                renderPlot('lle', '#loading-spinner-lle', '/get_lle'),
+                renderPlot('umap', '#loading-spinner-umap', '/get_umap'),
+                renderPlot('svd', '#loading-spinner-svd', '/get_svd')
+            ]).then(function() {
+                console.log("All plots rendered successfully");
+            }).catch(function() {
+                console.log("Error rendering plots");
+            });
+        });
+    </script>
+{% endblock %}

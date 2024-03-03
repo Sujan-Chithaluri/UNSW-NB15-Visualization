@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head lang="en">
+    <meta charset="UTF-8" />
+    {% include "imports.html" %}
+    <title>
+      {% block title %}{% endblock %}
+    </title>
+    {% block scripts %}{% endblock %}
+  </head>
+  <body>
+    {% include "header.html" %}
+    {% block content %}{% endblock %}
+  </body>
+</html>

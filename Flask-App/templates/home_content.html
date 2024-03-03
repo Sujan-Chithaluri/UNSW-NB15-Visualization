@@ -1,0 +1,179 @@
+<div class="row justify-content-center mt-5">
+    <div class="card">
+        <span class="p-3">Attacks are categorized as Analysis, Backdoor, DoS, Exploits, Fuzzers, Generic, Reconnaissance, Shellcode and Worms. There is considerable lack of balance for the dataset as 87% of the dataset comprises Normal records whereas only 0.007% of the dataset consists of Worms records.</span>
+        <div class="card-body text-center">
+            <div id="bargraph"></div>
+            <div id="loading-spinner-bargraph"
+                 class="spinner-border text-primary"
+                 role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center mt-5">
+    <div class="card">
+        <span class="p-3">A categorical variable, also referred to as a nominal variable, encompasses two or more distinct categories. Within the UNSW-NB15 dataset, there are three categorical features, excluding the target class: protocol, service, and state.</span>
+        <div class="row justify-content-center text-center mt-4">
+            <div class="p-2 col-3">
+                <span>Select categorical data</span>
+                <select class="form-select categorical mt-2"
+                        id="dropdown3"
+                        aria-label="categorical">
+                    <option value="proto">Protocol</option>
+                    <option selected value="service">Service</option>
+                    <option value="state">State</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body text-center">
+            <div id="cat"></div>
+            <div id="loading-spinner-cat"
+                 class="spinner-border text-primary"
+                 role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center mt-5">
+    <div class="card">
+        <span class="p-3">Box plots can be useful for visualizing distributions, central tendency, and variability within different categories or groups present in the UNSW-NB15 dataset. Considering it's a network security dataset with various categorical features (like protocol, service, state) and likely numerical features, here are some combinations on how we use box plots effectively to understand the data.</span>
+        <div class="row justify-content-center text-center mt-2">
+            <div class="p-2 col-3">
+                <span>Select X-Axis</span>
+                <select class="form-select numerical mt-2"
+                        id="dropdown1"
+                        aria-label="Default select example">
+                    <option value="attack_cat">Attack Category</option>
+                    <option value="proto">Protocol</option>
+                    <option selected value="service">Service</option>
+                    <option value="state">State</option>
+                </select>
+            </div>
+            <div class="p-2 col-3">
+                <span>Select Y-Axis</span>
+                <select class="form-select numerical mt-2"
+                        id="dropdown2"
+                        aria-label="Default select example">
+                    <option selected value="sbytes">Source to destination Transaction Bytes</option>
+                    <option value="rate">Ethernet data rates</option>
+                    <option value="ct_srv_src">Count of same source</option>
+                    <option value="ct_srv_dst">Count of same destination</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body text-center">
+            <div id="num"></div>
+            <div id="loading-spinner-num"
+                 class="spinner-border text-primary"
+                 role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center mt-5">
+    <div class="card">
+        <span class="p-3">The mean squared error calculated for Elastic Net through 5-fold cross validation</span>
+        <div class="card-body text-center">
+            <img id="kmeans" src="/static/images/mse.png" alt="" />
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center mt-5">
+    <div class="card">
+        <span class="p-3">The regularization path for Elastic Net presenting the informative features</span>
+        <div class="card-body text-center">
+            <img id="kmeans" src="/static/images/alpha.png" alt="" />
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center mt-5">
+    <div class="card">
+        <span class="p-3">Kmeans clustering</span>
+        <div class="card-body text-center">
+            <img id="kmeans" src="/static/images/kmeans.png" alt="" />
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+
+        function renderPlot(plotId, loadingSpinnerId, endpoint) {
+            $(loadingSpinnerId).show();
+
+            return new Promise(function(resolve, reject) {
+
+                $.ajax({
+                    url: endpoint,
+                    type: 'GET',
+                    success: function(response) {
+                        var graphJSON = JSON.parse(response);
+                        var config = {
+                            displayModeBar: true,
+                            scrollZoom: false,
+                            displaylogo: false
+                        };
+
+                        Plotly.setPlotConfig(config);
+                        Plotly.newPlot(plotId, graphJSON, {});
+                        $(loadingSpinnerId).hide();
+
+                        resolve();
+                    },
+                    error: function(error) {
+                        console.log(error);
+                        $(loadingSpinnerId).hide();
+                        reject();
+                    }
+                });
+            });
+        }
+
+        console.log("Rendering plots concurrently");
+
+        Promise.all([
+            renderPlot('bargraph', '#loading-spinner-bargraph', '/get_intro_bar'),
+            renderPlot('cat', '#loading-spinner-cat', '/get_categorical_plot?category=service'),
+            renderPlot('num', '#loading-spinner-num', '/get_numerical_plot?x_cat=attack_cat&y_cat=ct_srv_src')
+        ]).then(function() {
+            console.log("All plots rendered successfully");
+        }).catch(function() {
+            console.log("Error rendering plots");
+        });
+
+        $('.form-select.categorical').on('change', function() {
+
+            selectedValue = $('#dropdown3').val();
+            endpoint = '/get_categorical_plot?category=' + selectedValue
+
+            Promise.all([
+                renderPlot('cat', '#loading-spinner-cat', endpoint)
+            ]).then(function() {
+                console.log("All plots rendered successfully");
+            }).catch(function() {
+                console.log("Error rendering plots");
+            });
+
+          });
+
+          $('.form-select.numerical').on('change', function() {
+
+            const x_cat = $('#dropdown1').val();
+            const y_cat = $('#dropdown2').val();
+
+            endpoint = '/get_numerical_plot?x_cat=' + x_cat + '&y_cat=' + y_cat
+
+            Promise.all([
+                renderPlot('num', '#loading-spinner-num', endpoint)
+            ]).then(function() {
+                console.log("All plots rendered successfully");
+            }).catch(function() {
+                console.log("Error rendering plots");
+            });
+
+          });
+    });
+
+</script>
